@@ -1,21 +1,26 @@
+const path = require('path');
+const fs = require('fs');
 const db = require('../config/db');
 
-// Function to insert a new blog post
-const createBlog = async (title, content, author) => {
-    const query = 'INSERT INTO blogs (title, content, author_id) VALUES (?, ?, ?)';
+// Directory where images will be stored
+const uploadDir = path.join(__dirname, '../public/uploads/blogImages');
+
+// Ensure the upload directory exists
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Function to insert a new blog post with an image
+const createBlog = async (title, content, author, imageFilename) => {
+    const query = 'INSERT INTO blogs (title, content, author_id, featured_image) VALUES (?, ?, ?, ?)';
 
     try {
-        // Execute the query and wait for the result
-        const [result] = await db.query(query, [title, content, author]);
-        
-        // Return the result with the new blog ID
+        const [result] = await db.query(query, [title, content, author, imageFilename]);
         return { id: result.insertId };
     } catch (error) {
-        // Throw the error to be handled by the caller
         throw error;
     }
 };
-
 
 // Function to get a blog post by ID
 const findById = async (id) => {
@@ -25,21 +30,19 @@ const findById = async (id) => {
         const [results] = await db.query(query, [id]);
 
         if (results.length > 0) {
-            return results[0]; // Return the blog post if found
+            return results[0];
         } else {
-            throw new Error('Blog not found'); // Throw an error if not found
+            throw new Error('Blog not found');
         }
     } catch (error) {
-        throw error; // Re-throw the error to be handled by the caller
+        throw error;
     }
 };
 
+// Function to get all blog posts
 const getAllBlogs = async () => {
     try {
-        // Ensure the offset and limit are numbers
-       
-        // Format the query string directly with LIMIT and OFFSET
-        const query = `SELECT * FROM blogs `;
+        const query = 'SELECT * FROM blogs';
         const [rows] = await db.execute(query);
         return rows;
     } catch (error) {
@@ -47,21 +50,18 @@ const getAllBlogs = async () => {
     }
 };
 
-const updateBlog = async (id, title, content) => {
+// Function to update a blog post
+const updateBlog = async (id, title, content, imageFilename) => {
     try {
-        // SQL query to update the blog's title and content
-        const query = `UPDATE blogs SET title = ?, content = ? WHERE id = ?`;
-        
-        // Execute the query with the provided parameters
-        const [result] = await db.execute(query, [title, content, id]);
-        
-        // Return the result of the query
+        const query = 'UPDATE blogs SET title = ?, content = ?, featured_image = ? WHERE id = ?';
+        const [result] = await db.execute(query, [title, content, imageFilename, id]);
         return result;
     } catch (error) {
-        // Throw an error if something goes wrong during the update
         throw new Error('Error updating blog: ' + error.message);
     }
 };
+
+// Function to delete a blog post by ID
 const deleteBlogById = async (id) => {
     try {
         const query = 'DELETE FROM blogs WHERE id = ?';
@@ -70,12 +70,12 @@ const deleteBlogById = async (id) => {
     } catch (error) {
         throw new Error('Error deleting blog: ' + error.message);
     }
-}; 
+};
+
 module.exports = {
     createBlog,
     findById,
     getAllBlogs,
     updateBlog,
     deleteBlogById
-
 };

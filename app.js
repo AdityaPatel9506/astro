@@ -1,31 +1,26 @@
 const express = require('express');
-const bodyParser = require('body-parser');
 const path = require('path');
-const dotenv = require('dotenv');
+const bodyParser = require('body-parser');
 const blogRoutes = require('./routes/blogRoutes');
-const errorHandler = require('./middlewares/errorHandler');
-
-// Initialize environment variables
-dotenv.config();
-
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// Middleware
+// Middleware to parse JSON and URL-encoded data
+app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.json()); // To handle JSON payloads
 
+// Serve static files (including uploaded files)
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
-// Centralized routes
+// Use routes
 app.use('/blogs', blogRoutes);
-// Add more routes for different parts of your website
-// e.g., app.use('/users', userRoutes);
-// e.g., app.use('/products', productRoutes);
 
 // Error handling middleware
-app.use(errorHandler);
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).send('Something went wrong!');
+});
 
-// Start the Express server
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });

@@ -1,122 +1,144 @@
+const path = require('path');
+const fs = require('fs').promises;
 const Blog = require('../models/blogModel');
+const { body, validationResult } = require('express-validator');
 
-// Show the form for creating a new blog
-exports.showNewBlogForm = (req, res) => {
-    res.render('newBlog'); // Ensure you have a view named 'newBlog'
+// Function to handle file upload
+const handleFileUpload = async (file) => {
+    if (!file) return null;
+
+    const { path: tempPath, originalname } = file;
+    const extension = path.extname(originalname);
+    const newFileName = `${Date.now()}${extension}`;
+    const targetPath = path.join(__dirname, '../public/uploads/blogImages', newFileName);
+
+    try {
+        await fs.rename(tempPath, targetPath); // Move the file to the target directory
+        return newFileName; // Return the filename to store in the database
+    } catch (err) {
+        throw new Error('Error handling file upload: ' + err.message);
+    }
 };
 
-exports.getBlogs = async(req,res) =>{
-    try {
-        console.log("get blogs called");
-     
-        
-        // Fetch the blog post by ID
-        const blog = await Blog.getAllBlogs();
+// Handle new blog submission with file upload
+exports.submitBlog = [
+    // Validation rules
+    body('title').notEmpty().withMessage('Title is required'),
+    body('content').notEmpty().withMessage('Content is required'),
+    body('author_id').isInt().withMessage('Author ID must be an integer'),
 
-        // Check if the blog post was found
-        if (blog) {
-            // Render the 'showBlog' view with the blog data
-            res.send({ blog });
+    async (req, res) => {
+        console.log('Request Body:', req.body); // Check if form data is received
+        console.log('Uploaded File:', req.file); // Check if file is received
+
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const { title, content, author_id } = req.body;
+        const imageFilename = await handleFileUpload(req.file); // Use await to handle file upload
+
+        try {
+            const result = await Blog.createBlog(title, content, author_id, imageFilename);
+            res.status(201).json({
+                message: 'Blog created successfully',
+                id: result.id
+            });
+        } catch (err) {
+            res.status(400).send('Error saving blog: ' + err.message);
+        }
+    }
+];
+
+// Fetch all blogs
+exports.getBlogs = async (req, res) => {
+    try {
+        const blogs = await Blog.getAllBlogs();
+
+        if (blogs.length > 0) {
+            res.status(200).json({ blogs });
         } else {
-            // Respond with a 404 status if the blog post is not found
-            res.status(404).send('Blog not found');
+            res.status(404).send('No blogs found');
         }
     } catch (error) {
-        // Respond with a 400 status and the error message if an exception occurs
-        res.status(400).send('Error fetching blog: ' + error.message);
-    }
-}
-
-
-// Handle new blog submission
-exports.submitBlog = async (req, res) => {
-    const { title, content, author_id } = req.body;
-
-    try {
-        // Call createBlog and await the result
-        const result = await Blog.createBlog(title, content, author_id);
-        
-        // Respond with a success message and the new blog ID
-        res.status(201).json({
-            message: 'Blog created successfully',
-            id: result.id
-        });
-    } catch (err) {
-        // Handle errors and send a response with a 400 status code
-        res.status(400).send('Error saving blog: ' + err.message);
+        res.status(400).send('Error fetching blogs: ' + error.message);
     }
 };
 
 // Display a specific blog by ID
 exports.showBlog = async (req, res) => {
     try {
-        // Extract the blog ID from the request parameters
         const blogId = req.params.id;
-        
-        // Fetch the blog post by ID
         const blog = await Blog.findById(blogId);
 
-        // Check if the blog post was found
         if (blog) {
-            // Render the 'showBlog' view with the blog data
-            res.send({ blog });
+            res.status(200).json({ blog });
         } else {
-            // Respond with a 404 status if the blog post is not found
             res.status(404).send('Blog not found');
         }
     } catch (error) {
-        // Respond with a 400 status and the error message if an exception occurs
         res.status(400).send('Error fetching blog: ' + error.message);
     }
 };
 
-// Controller function to update a blog's title and content
-
+// Update a blog's title and content
 exports.updateBlog = async (req, res) => {
     try {
-  
         const blogId = req.params.id;
-
-        // Get the title and content from the request body
         const { title, content } = req.body;
+        const imageFilename = req.file ? await handleFileUpload(req.file) : null;
 
-        // Check if both title and content are provided
         if (!title || !content) {
             return res.status(400).json({ message: 'Title and content are required' });
         }
 
-        // Call the model method to update the blog
-        const result = await Blog.updateBlog(blogId, title, content);
+        const result = await Blog.updateBlog(blogId, title, content, imageFilename);
 
-        // Check if the blog was found and updated
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Blog not found' });
         }
 
-        // Respond with a success message
         res.status(200).json({
             message: 'Blog updated successfully',
             updatedBlog: {
                 id: blogId,
-                title: title,
-                content: content
+                title,
+                content,
+                featured_image: imageFilename
             }
         });
     } catch (error) {
-        // Handle any errors that occur during the update
         res.status(500).json({ message: 'Error updating blog: ' + error.message });
     }
 };
 
+// Delete a blog by ID
 exports.deleteBlog = async (req, res) => {
     try {
-        const blogId = req.params.id; // Get the blog ID from the URL parameters
+        const blogId = req.params.id;
+        // First, fetch the blog to get the filename of the associated image
+        const blog = await Blog.findById(blogId);
 
-        // Call the delete method from the Blog model
+        if (!blog) {
+            return res.status(404).json({ message: 'Blog not found' });
+        }
+
+        // Delete the blog entry from the database
         const result = await Blog.deleteBlogById(blogId);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Blog not found' });
+        }
+
+        // If there's an image file associated with the blog, delete it
+        if (blog.featured_image) {
+            const filePath = path.join(__dirname, '../public/uploads/blogImages', blog.featured_image);
+            try {
+                await fs.unlink(filePath); // Delete the file
+            } catch (err) {
+                console.error('Error deleting file:', err.message);
+            }
         }
 
         res.status(200).json({ message: 'Blog deleted successfully' });
