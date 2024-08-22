@@ -24,6 +24,7 @@ const getCoordinates = async (cityName) => {
 };
 
 // Function to get Panchang details using the provided parameters
+
 const getPanchangDetails = async (date, time, cityName) => {
   try {
     // Get the coordinates of the city
