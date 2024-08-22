@@ -3,6 +3,7 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const blogRoutes = require('./routes/blogRoutes');
 const panchangRoutes = require('./routes/panchangRoutes')
+const matchingRoutes  = require('./routes/kundaliRoutes')
 const app = express();
 
 // Middleware to parse JSON and URL-encoded data
@@ -18,6 +19,7 @@ app.use('/blogs', blogRoutes);
 
 
 app.use('/panchang', panchangRoutes);
+app.use('/kundali', matchingRoutes);
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
