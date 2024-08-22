@@ -10,7 +10,7 @@ const handleFileUpload = async (file) => {
     const { path: tempPath, originalname } = file;
     const extension = path.extname(originalname);
     const newFileName = `${Date.now()}${extension}`;
-    const targetPath = path.join(__dirname, '../public/uploads/blogImages', newFileName);
+    const targetPath = path.join(__dirname, '../uploads/blogImages', newFileName);
 
     try {
         await fs.rename(tempPath, targetPath); // Move the file to the target directory
