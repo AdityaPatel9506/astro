@@ -1,26 +1,21 @@
-// panchangModel.js
 const axios = require('axios');
+const cities = require('all-the-cities');
 require('dotenv').config();
-// Function to get the latitude and longitude of a city
+
+// Function to get the latitude and longitude of a city using `all-the-cities`
 const getCoordinates = async (cityName) => {
   console.log("Location data called");
 
   try {
-      const response = await axios.get('https://nominatim.openstreetmap.org/search', {
-          params: {
-              q: cityName,
-              format: 'json',
-              limit: 1,
-          },
-      });
-
-      console.log("Location data response received", response.data); // Log the full response data
-
-      if (response.data.length > 0) {
+      // Find the city in the `all-the-cities` data
+      const city = cities.find(city => city.name.toLowerCase() === cityName.toLowerCase());
+      
+      if (city) {
           console.log("Location data fetched");
-          const { lat, lon } = response.data[0];
-          console.log(lat + " " + lon);
-          return { latitude: lat, longitude: lon };
+          const { coordinates } = city.loc;
+          const [longitude, latitude] = coordinates;
+          console.log(`Latitude: ${latitude}, Longitude: ${longitude}`);
+          return { latitude, longitude };
       } else {
           console.log("City not found");
           throw new Error('City not found');
@@ -31,11 +26,9 @@ const getCoordinates = async (cityName) => {
   }
 };
 
-
 // Function to get Panchang details using the provided parameters
-
 const getPanchangDetails = async (date, time, cityName) => {
-  console.log(" panchang data called")
+  console.log("Panchang data called");
   try {
     // Get the coordinates of the city
     const coordinates = await getCoordinates(cityName);
@@ -43,7 +36,7 @@ const getPanchangDetails = async (date, time, cityName) => {
     // Call the Panchang API with the obtained coordinates
     const response = await axios.get('https://api.vedicastroapi.com/v3-json/panchang/panchang', {
       params: {
-        api_key:  process.env.API_KEY, // Replace with your actual API key
+        api_key: process.env.API_KEY, // Replace with your actual API key
         date: date,
         lat: coordinates.latitude,
         lon: coordinates.longitude,
