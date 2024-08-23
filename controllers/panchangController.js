@@ -1,14 +1,19 @@
 // panchangController.js
 const panchangModel = require('../models/panchangModel');
 
+
 const fetchPanchang = async (req, res) => {
-  const { date, time, cityName } = req.query;  // Change to req.query for GET requests
-  console.log(req.query);
+  const date = req.query.date || req.body.date;
+  const time = req.query.time || req.body.time;
+  const cityName = req.query.cityName || req.body.cityName;
+
+  console.log(`Date: ${date}, Time: ${time}, City: ${cityName}`);
+
   try {
       const panchangData = await panchangModel.getPanchangDetails(date, time, cityName);
-      res.json({ status: 200, response: panchangData });
+      res.json(panchangData);
   } catch (error) {
-      res.status(500).json({ status: 500, error: error.message });
+      res.status(500).json({ error: error.message });
   }
 };
   

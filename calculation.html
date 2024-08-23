@@ -28,7 +28,7 @@
             const cityName = document.getElementById('cityName').value;
 
             const url = `http://localhost:5000/panchang/panchang?date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}&cityName=${encodeURIComponent(cityName)}`;
-
+            console.log(url);
             fetch(url)
                 .then(response => {
                     if (!response.ok) {
