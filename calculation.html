@@ -27,7 +27,7 @@
             const time = document.getElementById('time').value;
             const cityName = document.getElementById('cityName').value;
 
-            const url = `http://localhost:5000/panchang/panchang?date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}&cityName=${encodeURIComponent(cityName)}`;
+            const url = `https://astro-c3p2.onrender.com/panchang/panchang?date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}&cityName=${encodeURIComponent(cityName)}`;
             console.log(url);
             fetch(url)
                 .then(response => {
@@ -35,6 +35,7 @@
                         throw new Error('Network response was not ok');
                     }
                     return response.json();
+                    
                 })
                 .then(data => {
                     if (data.status === 200) {
