@@ -3,136 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planetary Details</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f4;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            background-color: #fff;
-        }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border: 1px solid #ddd;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        caption {
-            font-size: 1.5em;
-            margin: 10px 0;
-        }
-    </style>
+    <title>Panchang Data</title>
 </head>
 <body>
-    <table>
-        <caption>Planetary Details</caption>
-        <thead>
-            <tr>
-                <th>Planets</th>
-                <th>C</th>
-                <th>C Calculation Steps</th>
-                <th>R</th>
-                <th>R Calculation Steps</th>
-                <th>Rashi</th>
-                <th>Longitude</th>
-                <th>Nakshatra</th>
-                <th>Pada</th>
-                <th>Relation</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Sun</td>
-                <td>Own</td>
-                <td>Sun rules Leo</td>
-                <td>Leo</td>
-                <td>Longitude falls in Leo sign</td>
-                <td>Leo</td>
-                <td>05-37-03</td>
-                <td>Magha</td>
-                <td>2</td>
-                <td>Own</td>
-            </tr>
-            <tr>
-                <td>Moon</td>
-                <td>Neutral</td>
-                <td>Moon is neither in its own nor in enemy sign</td>
-                <td>Pisces</td>
-                <td>Longitude falls in Pisces sign</td>
-                <td>Pisces</td>
-                <td>12-39-38</td>
-                <td>Uttarabhadra</td>
-                <td>3</td>
-                <td>Neutral</td>
-            </tr>
-            <tr>
-                <td>Mars</td>
-                <td>Neutral</td>
-                <td>Mars is neither in its own nor in enemy sign</td>
-                <td>Taurus</td>
-                <td>Longitude falls in Taurus sign</td>
-                <td>Taurus</td>
-                <td>27-28-28</td>
-                <td>Mrigasira</td>
-                <td>2</td>
-                <td>Neutral</td>
-            </tr>
-            <tr>
-                <td>Mercury</td>
-                <td>Enemy</td>
-                <td>Mercury rules Virgo, Cancer is its enemy sign</td>
-                <td>Cancer</td>
-                <td>Longitude falls in Cancer sign</td>
-                <td>Cancer</td>
-                <td>29-44-03</td>
-                <td>Ashlesha</td>
-                <td>4</td>
-                <td>Enemy</td>
-            </tr>
-            <tr>
-                <td>Jupiter</td>
-                <td>Enemy</td>
-                <td>Jupiter rules Sagittarius, Taurus is its enemy sign</td>
-                <td>Taurus</td>
-                <td>Longitude falls in Taurus sign</td>
-                <td>Taurus</td>
-                <td>23-34-28</td>
-                <td>Mrigasira</td>
-                <td>1</td>
-                <td>Enemy</td>
-            </tr>
-            <tr>
-                <td>Venus</td>
-                <td>Enemy</td>
-                <td>Venus rules Taurus, Leo is its enemy sign</td>
-                <td>Leo</td>
-                <td>Longitude falls in Leo sign</td>
-                <td>Leo</td>
-                <td>27-04-15</td>
-                <td>Uttaraphal</td>
-                <td>1</td>
-                <td>Enemy</td>
-            </tr>
-            <tr>
-                <td>Saturn</td>
-                <td>Own</td>
-                <td>Saturn rules Aquarius</td>
-                <td>Aquarius</td>
-                <td>Longitude falls in Aquarius sign</td>
-                <td>Aquarius</td>
-                <td>23-04-08</td>
-                <td>Purvabhadra</td>
-                <td>1</td>
-                <td>Own</td>
-            </tr>
-        </tbody>
-    </table>
+    <h1>Panchang Data</h1>
+    <form id="panchangForm">
+        <label for="date">Date:</label>
+        <input type="text" id="date" value="11/03/1994" required><br><br>
+        <label for="time">Time:</label>
+        <input type="text" id="time" value="05:20" required><br><br>
+        <label for="cityName">City:</label>
+        <input type="text" id="cityName" value="Delhi" required><br><br>
+        <button type="submit">Get Panchang</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('panchangForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const date = document.getElementById('date').value;
+            const time = document.getElementById('time').value;
+            const cityName = document.getElementById('cityName').value;
+
+            const url = `http://localhost:5000/panchang/panchang?date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}&cityName=${encodeURIComponent(cityName)}`;
+
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 200) {
+                        const response = data.response;
+                        let resultHtml = `
+                            <h2>Results for ${cityName} on ${date} at ${time}</h2>
+                            <p><strong>Day:</strong> ${response.day.name}</p>
+                            <p><strong>Tithi:</strong> ${response.tithi.name} (${response.tithi.meaning})</p>
+                            <p><strong>Nakshatra:</strong> ${response.nakshatra.name} (${response.nakshatra.meaning})</p>
+                            <p><strong>Karana:</strong> ${response.karana.name} (${response.karana.special})</p>
+                            <p><strong>Yoga:</strong> ${response.yoga.name} (${response.yoga.meaning})</p>
+                            <p><strong>Rasi:</strong> ${response.rasi.name}</p>
+                            <p><strong>Sunrise:</strong> ${response.advanced_details.sun_rise}</p>
+                            <p><strong>Sunset:</strong> ${response.advanced_details.sun_set}</p>
+                            <p><strong>Moonrise:</strong> ${response.advanced_details.moon_rise}</p>
+                            <p><strong>Moonset:</strong> ${response.advanced_details.moon_set}</p>
+                        `;
+                        document.getElementById('result').innerHTML = resultHtml;
+                    } else {
+                        document.getElementById('result').innerHTML = `<p>Error: Unable to fetch Panchang data.</p>`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching Panchang data:', error);
+                    document.getElementById('result').innerHTML = `<p>Error: Unable to fetch Panchang data.</p>`;
+                });
+        });
+    </script>
 </body>
 </html>
